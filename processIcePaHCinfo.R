@@ -5,12 +5,13 @@ library(tidyr)
 library(tidyselect)
 library(tidyverse)
 library(stringdist)
-source(file="~/constantentropy/dormUido.R")
+#source(file="~/constantentropy/dormUido.R")
 library(devtools)
 source_url('https://raw.githubusercontent.com/joelcw/constantentropy/09543002e1eb28b4c9a1a83e4b08b67bcc258e79/dormUido.R')
 
-foo <- read_tsv(file="~/CurrentLx/infoTheory/histProject/ovCoding.txt",header=F)
+foo <- read.delim(file="~/iceBits/ovCodingTreeAndClauseFreq.tsv",header = F,sep="\t")
 colnames(foo) <- c("clauseFreq","sentFreq")
+
 #strip response times of brackets, convert them to list of numbers by splitting
 foo$clauseInfo <- str_remove_all(foo$clauseFreq, "[ \\[\\]]")
 #Because R string functions are as unintuitive as humanly possible, in order to get this to actually return an indexable list of substrings
