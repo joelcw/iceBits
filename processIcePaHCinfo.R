@@ -47,6 +47,8 @@ foo$ClauseDorm <- 0
 foo$ClauseDormUido <- 0
 foo$SentDorm <- 0
 foo$SentDormUido <- 0
+foo$ClauseInfo <- 0
+foo$SentInfo <- 0
 
 i = 1
 for (i in 1:nrow(foo))
