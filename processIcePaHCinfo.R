@@ -47,15 +47,21 @@ foo$ClauseDorm <- 0
 foo$ClauseDormUido <- 0
 foo$SentDorm <- 0
 foo$SentDormUido <- 0
-foo$ClauseInfo <- 0
-foo$SentInfo <- 0
 
 i = 1
-for (i in 1:nrow(foo))
+while (i <= nrow(foo))
   {
   
-  foo$ClauseInfo[i][[1]] <- log2(foo$ClauseInfo[i][[1]]/25000000)
-  foo$ClauseDorm[i] <- dorm(foo$ClauseInfo[i][[1]])
+  foo$ClauseProb[i][[1]] <- foo$ClauseFreq[i][[1]]*(1/25000000)
+  foo$ClauseInfo[i][[1]] <- log2(foo$ClauseProb[i][[1]])
+  foo$ClauseDorm[i] <- dorm(foo$ClauseInfo[i][[1]], correct=TRUE)
   foo$ClauseDormUido[i] <- foo$ClauseDorm[i] - dorm(uido(foo$ClauseInfo[i][[1]]))
+  
+  foo$SentProb[i][[1]] <- (foo$SentFreq[i][[1]])*(1/25000000)
+  foo$SentInfo[i][[1]] <- log2(foo$SentProb[i][[1]])
+  foo$SentDorm[i] <- dorm(foo$SentInfo[i][[1]], correct=TRUE)
+  foo$SentDormUido[i] <- foo$SentDorm[i] - dorm(uido(foo$SentInfo[i][[1]]))
+  
+  i = i+1
   
   }
