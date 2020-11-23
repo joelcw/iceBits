@@ -7,7 +7,7 @@ library(tidyverse)
 
 #source(file="~/constantentropy/dormUido.R")
 library(devtools)
-source_url('https://raw.githubusercontent.com/joelcw/constantentropy/09543002e1eb28b4c9a1a83e4b08b67bcc258e79/dormUido.R')
+source_url('https://raw.githubusercontent.com/joelcw/constantentropy/master/dormUido.R')
 
 foo <- read.delim(file="~/iceBits/ovCodingTreeAndClauseFreq.tsv",header = F,sep="\t")
 
