@@ -13,7 +13,7 @@ foo <- read.delim(file="~/iceBits/ovCodingTreeAndClauseFreq.tsv",header = F,sep=
 
 #drop empty columns and name good columns
 foo <- foo[,1:14]
-colnames(foo) <- c("OV","ObjType","SbjType","Clause","NodeWords","NodeWords2","NodeString","TextId","Year","Genre", "TreeId","sentString","ClauseFreq","SentFreq")
+colnames(foo) <- c("OV","ObjType","SbjType","Clause","NodeWords","NodeWords2","NodeString","TextId","Year","Genre", "TreeId","sentString","SentFreq","ClauseFreq")
 
 #strip off extended labels from clause labels
 foo$Clause <- str_extract(foo$Clause,"IP-[A-Z]{3}")
