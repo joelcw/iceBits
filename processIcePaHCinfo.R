@@ -4,6 +4,10 @@
 library(tidyr)
 library(tidyselect)
 library(tidyverse)
+library(ggplot2)
+library(RColorBrewer)
+library(lme4)
+library(lmerTest)
 
 #source(file="~/constantentropy/dormUido.R")
 library(devtools)
@@ -13,7 +17,13 @@ foo <- read.delim(file="~/iceBits/ovCodingTreeAndClauseFreq.tsv",header = F,sep=
 
 #drop empty columns and name good columns
 foo <- foo[,1:14]
-colnames(foo) <- c("OV","ObjType","SbjType","Clause","NodeWords","NodeWords2","NodeString","TextId","Year","Genre", "TreeId","sentString","SentFreq","ClauseFreq")
+colnames(foo) <- c("OV","ObjType","SbjType","Clause","SbjWords","ObjWords","NodeString","TextId","Year","Genre", "TreeId","SentString","SentFreq","ClauseFreq")
+
+foo$Year <- as.numeric(as.character(foo$Year))
+foo$OV <- as.numeric(as.character(foo$OV))
+foo$SbjWords <- as.numeric(as.character(foo$SbjWords))
+foo$ObjWords <- as.numeric(as.character(foo$ObjWords))
+
 
 #strip off extended labels from clause labels
 foo$Clause <- str_extract(foo$Clause,"IP-[A-Z]{3}")
@@ -65,3 +75,87 @@ while (i <= nrow(foo))
   i = i+1
   
   }
+
+
+####Some plots
+
+#Plot with only one type of objects, sub clauses, sanity check
+nomobj <- subset(foo,foo$ObjType == "dp" & foo$Clause == "IP-SUB")
+nomobj <- subset(nomobj, nomobj$SbjType == "dp" | nomobj$SbjType == "pro")
+nomobj <- droplevels(nomobj)
+foo$Clause <- as.factor(foo$Clause)
+
+
+ggplot(nomobj, aes(Year, OV, color=SbjType)) + 
+  labs(y = "OV", x = "\nYear") +
+  #  geom_line() +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~Genre) +
+scale_color_brewer(palette = "Set1") + 
+  theme_bw() + theme(panel.border = element_blank())
+
+nomobjsbj <- subset(nomobj, nomobj$SbjType == "dp")
+nomobjsbj <- droplevels(nomobjsbj)
+nomobjsbj$OV <- as.factor(nomobjsbj$OV)
+
+ggplot(nomobjsbj, aes(Year, ClauseDormUido, color=OV)) + 
+  labs(y = "ClauseDorm-ClauseUido", x = "\nYear") +
+  #  geom_line() +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~SimpleGenre) +
+  scale_color_brewer(palette = "Set1") + 
+  theme_bw() + theme(panel.border = element_blank())
+
+
+####Statistical models
+
+##Assume interaction between Genre Year and OV, because we know the slope of decline of OV over time differs by Genre,
+#but recode Genre into nar and other, so there's some statistical power
+
+foo$SimpleGenre <- ifelse(foo$Genre == "nar", "nar", "other")
+
+#only a priori known interactions included
+foo.fit.Sbj.Obj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType, data=foo)
+summary(foo.fit.Sbj.Obj)
+
+#interaction between SbjType and OV affecting dormuido, and ObjType and OV, but no 3-way interaction affecting dormuido
+foo.fit.SbjOV.ObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType:OV+ObjType:OV, data=foo)
+summary(foo.fit.SbjOV.ObjOV)
+
+anova(foo.fit.SbjOV.ObjOV,foo.fit.Sbj.Obj, test="Chisq")
+AIC(foo.fit.Sbj.Obj)
+AIC(foo.fit.SbjOV.ObjOV)
+BIC(foo.fit.Sbj.Obj)
+BIC(foo.fit.SbjOV.ObjOV)
+
+#Interaction between Sbj and Obj, but not with OV; model comparison shows this to be important.
+foo.fit.SbjObj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType:ObjType, data=foo)
+summary(foo.fit.SbjObj)
+anova(foo.fit.SbjObj,foo.fit.Sbj.Obj, test="Chisq")
+AIC(foo.fit.Sbj.Obj)
+AIC(foo.fit.SbjObj)
+BIC(foo.fit.Sbj.Obj)
+BIC(foo.fit.SbjObj)
+
+
+#3-way interaction between sbj and obj types and OV affecting dormuido, but no interaction with Clause yet
+foo.fit.SbjObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV, data=foo)
+summary(foo.fit.SbjObjOV)
+anova(foo.fit.SbjObj,foo.fit.SbjObjOV, test="Chisq")
+
+#4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and AIC does show this to be important, though it's difficult to interpret, and BIC goes the other way.
+foo.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=foo)
+summary(foo.fit.SbjObjOVClause)
+anova(foo.fit.SbjObj,foo.fit.SbjObjOVClause, test="Chisq")
+AIC(foo.fit.SbjObj)
+AIC(foo.fit.SbjObjOVClause)
+BIC(foo.fit.SbjObj)
+BIC(foo.fit.SbjObjOVClause)
+
+
+
+##Same models with just narrative tests
+
+##Now try for sentence level dormuido, and not assuming any complex interactions with Clause
