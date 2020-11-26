@@ -99,6 +99,7 @@ nomobjsbj <- subset(nomobj, nomobj$SbjType == "dp")
 nomobjsbj <- droplevels(nomobjsbj)
 nomobjsbj$OV <- as.factor(nomobjsbj$OV)
 
+#Note that dormuido is stable over time, and Year is not significant in any model below.
 ggplot(nomobjsbj, aes(Year, ClauseDormUido, color=OV)) + 
   labs(y = "ClauseDorm-ClauseUido", x = "\nYear") +
   #  geom_line() +
@@ -116,11 +117,11 @@ ggplot(nomobjsbj, aes(Year, ClauseDormUido, color=OV)) +
 
 foo$SimpleGenre <- ifelse(foo$Genre == "nar", "nar", "other")
 
-#only a priori known interactions included
+#no interactions with dorm
 foo.fit.Sbj.Obj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType, data=foo)
 summary(foo.fit.Sbj.Obj)
 
-#interaction between SbjType and OV affecting dormuido, and ObjType and OV, but no 3-way interaction affecting dormuido
+#interaction between SbjType and OV affecting dormuido, and ObjType and OV, but no 3-way interaction affecting dormuido. Model comparison borderline on all measures.
 foo.fit.SbjOV.ObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType:OV+ObjType:OV, data=foo)
 summary(foo.fit.SbjOV.ObjOV)
 
@@ -145,7 +146,7 @@ foo.fit.SbjObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGen
 summary(foo.fit.SbjObjOV)
 anova(foo.fit.SbjObj,foo.fit.SbjObjOV, test="Chisq")
 
-#4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and AIC does show this to be important, though it's difficult to interpret, and BIC goes the other way.
+#4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and AIC does show this to be important, though it's difficult to interpret, and BIC goes the other way.  OV and Clause sig, and OV and SbjTypepro, and OV and SbjTypegapped.
 foo.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=foo)
 summary(foo.fit.SbjObjOVClause)
 anova(foo.fit.SbjObj,foo.fit.SbjObjOVClause, test="Chisq")
@@ -154,8 +155,122 @@ AIC(foo.fit.SbjObjOVClause)
 BIC(foo.fit.SbjObj)
 BIC(foo.fit.SbjObjOVClause)
 
+#Model with SbjObj interaction, OVClause, OVSbjType interactions, but not 4-way. Model comparison prefers the 4-way, except for BIC, which prefers the SbjObj model.
+foo.fit.SbjObj.OVSbj.OVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType+OV*Clause+OV*SbjType, data=foo)
+summary(foo.fit.SbjObj.OVSbj.OVClause)
+anova(foo.fit.SbjObj,foo.fit.SbjObj.OVSbj.OVClause, test="Chisq")
+anova(foo.fit.SbjObj.OVSbj.OVClause,foo.fit.SbjObjOVClause, test="Chisq")
+AIC(foo.fit.SbjObj)
+AIC(foo.fit.SbjObj.OVSbj.OVClause)
+BIC(foo.fit.SbjObj)
+BIC(foo.fit.SbjObj.OVSbj.OVClause)
+AIC(foo.fit.SbjObj.OVSbj.OVClause)
+AIC(foo.fit.SbjObjOVClause)
+BIC(foo.fit.SbjObj.OVSbj.OVClause)
+BIC(foo.fit.SbjObjOVClause)
 
 
-##Same models with just narrative tests
+##Same models with just narrative texts; but they all come out the same as above, more or less.
+naronly <- subset(foo,foo$Genre == "nar")
+naronly <- droplevels(naronly)
 
-##Now try for sentence level dormuido, and not assuming any complex interactions with Clause
+naronly.fit.Sbj.Obj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+ObjType+SbjType, data=naronly)
+summary(naronly.fit.Sbj.Obj)
+
+#Model comparison sig by Chisq and AIC, not BIC.
+naronly.fit.SbjOV.ObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+ObjType+SbjType+SbjType:OV+ObjType:OV, data=naronly)
+summary(naronly.fit.SbjOV.ObjOV)
+anova(naronly.fit.Sbj.Obj,naronly.fit.SbjOV.ObjOV, test="Chisq")
+AIC(naronly.fit.Sbj.Obj)
+AIC(naronly.fit.SbjOV.ObjOV)
+BIC(naronly.fit.Sbj.Obj)
+BIC(naronly.fit.SbjOV.ObjOV)
+
+#Interaction between Sbj and Obj, but not with OV; Model comparison sig by Chisq and AIC, not BIC.
+naronly.fit.SbjObj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+ObjType+SbjType+SbjType:ObjType, data=naronly)
+summary(naronly.fit.SbjObj)
+anova(naronly.fit.SbjObj,naronly.fit.Sbj.Obj, test="Chisq")
+AIC(naronly.fit.Sbj.Obj)
+AIC(naronly.fit.SbjObj)
+BIC(naronly.fit.Sbj.Obj)
+BIC(naronly.fit.SbjObj)
+
+
+#4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and mildly AIC shows this to be important, not BIC.
+naronly.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=naronly)
+anova(naronly.fit.SbjObj,naronly.fit.SbjObjOVClause, test="Chisq")
+AIC(naronly.fit.SbjObj)
+AIC(naronly.fit.SbjObjOVClause)
+BIC(naronly.fit.SbjObj)
+BIC(naronly.fit.SbjObjOVClause)
+
+
+
+##Same models, but with only pro and dp SbjType and ObjType
+pronom <- subset(foo, foo$SbjType == "dp" | foo$SbjType == "pro")
+pronom <- subset(pronom, pronom$ObjType == "dp" | pronom$ObjType == "pro")
+pronom <- droplevels(pronom)
+
+pronom.fit.Sbj.Obj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType, data=pronom)
+summary(pronom.fit.Sbj.Obj)
+
+#interaction between SbjType and OV affecting dormuido, and ObjType and OV, but no 3-way interaction affecting dormuido. OV and SbjTypepro sig but borderline AIC, BIC.
+pronom.fit.SbjOV.ObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType:OV+ObjType:OV, data=pronom)
+summary(pronom.fit.SbjOV.ObjOV)
+
+anova(pronom.fit.SbjOV.ObjOV,pronom.fit.Sbj.Obj, test="Chisq")
+AIC(pronom.fit.Sbj.Obj)
+AIC(pronom.fit.SbjOV.ObjOV)
+BIC(pronom.fit.Sbj.Obj)
+BIC(pronom.fit.SbjOV.ObjOV)
+
+#Interaction between Sbj and Obj, but not with OV; model comparison shows this to be important.
+pronom.fit.SbjObj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType:ObjType, data=pronom)
+summary(pronom.fit.SbjObj)
+anova(pronom.fit.SbjObj,pronom.fit.Sbj.Obj, test="Chisq")
+AIC(pronom.fit.Sbj.Obj)
+AIC(pronom.fit.SbjObj)
+BIC(pronom.fit.Sbj.Obj)
+BIC(pronom.fit.SbjObj)
+
+
+#3-way interaction between sbj and obj types and OV affecting dormuido, but no interaction with Clause yet. Model comparison around 0.05, OV and SbjTypepro is sig as above.
+pronom.fit.SbjObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV, data=pronom)
+summary(pronom.fit.SbjObjOV)
+anova(pronom.fit.SbjObj,pronom.fit.SbjObjOV, test="Chisq")
+
+#4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and AIC does show this to be important, though it's difficult to interpret, and BIC goes the other way. OV and Clause sig and OV and SbjTypepro.
+pronom.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=pronom)
+summary(pronom.fit.SbjObjOVClause)
+anova(pronom.fit.SbjObj,pronom.fit.SbjObjOVClause, test="Chisq")
+AIC(pronom.fit.SbjObj)
+AIC(pronom.fit.SbjObjOVClause)
+BIC(pronom.fit.SbjObj)
+BIC(pronom.fit.SbjObjOVClause)
+
+
+
+
+
+##Now try for sentence level dormuido, subord clauses only, because sent and clause-level dormuido is often equivalent for matrix clauses
+subonly <- subset(foo,foo$Clause == "IP-SUB")
+subonly <- droplevels(subonly)
+
+#no interactions with dorm
+subonly.fit.Sbj.Obj <- lmer(SentDormUido~(1|TextId)+Year+OV+Year+SimpleGenre+ObjType+SbjType, data=subonly)
+summary(subonly.fit.Sbj.Obj)
+
+#Interaction between Sbj and Obj, but not with OV; not sig.
+subonly.fit.SbjObj <- lmer(SentDormUido~(1|TextId)+Year+OV+Year+SimpleGenre+ObjType+SbjType+SbjType:ObjType, data=subonly)
+summary(subonly.fit.SbjObj)
+anova(subonly.fit.SbjObj,subonly.fit.Sbj.Obj, test="Chisq")
+AIC(subonly.fit.Sbj.Obj)
+AIC(subonly.fit.SbjObj)
+BIC(subonly.fit.Sbj.Obj)
+BIC(subonly.fit.SbjObj)
+
+
+#3-way interaction between sbj and obj types and OV affecting dormuido; not sig.
+subonly.fit.SbjObjOV <- lmer(SentDormUido~(1|TextId)+Year+OV+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV, data=subonly)
+summary(subonly.fit.SbjObjOV)
+anova(subonly.fit.SbjObj,subonly.fit.SbjObjOV, test="Chisq")
