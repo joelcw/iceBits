@@ -146,7 +146,7 @@ foo.fit.SbjObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGen
 summary(foo.fit.SbjObjOV)
 anova(foo.fit.SbjObj,foo.fit.SbjObjOV, test="Chisq")
 
-#4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and AIC does show this to be important, though it's difficult to interpret, and BIC goes the other way.  OV and Clause sig, and OV and SbjTypepro, and OV and SbjTypegapped.
+#4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and AIC does show this to be important, though BIC goes the other way. Still, I think we have a winner.  OV and Clause sig, and OV and SbjTypepro, and OV and SbjTypegapped.
 foo.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=foo)
 summary(foo.fit.SbjObjOVClause)
 anova(foo.fit.SbjObj,foo.fit.SbjObjOVClause, test="Chisq")
@@ -154,6 +154,27 @@ AIC(foo.fit.SbjObj)
 AIC(foo.fit.SbjObjOVClause)
 BIC(foo.fit.SbjObj)
 BIC(foo.fit.SbjObjOVClause)
+
+
+#just for the hell of it, see if the 3-way interaction OV:Clause:SbjType...and actually model comparison shows the 4 way is different (but BIC goes the other way)
+foo.fit.SbjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*OV*Clause, data=foo)
+summary(foo.fit.SbjOVClause)
+anova(foo.fit.SbjOVClause,foo.fit.SbjObjOVClause, test="Chisq")
+AIC(foo.fit.SbjOVClause)
+AIC(foo.fit.SbjObjOVClause)
+BIC(foo.fit.SbjOVClause)
+BIC(foo.fit.SbjObjOVClause)
+
+
+#change contrasts so we can compare nominal objects to other types..and with "pro" it shows an interesting interaction bet/ dp and dp
+foo$ObjTypeRelevel <- relevel(foo$ObjType, ref="pro")
+foo$SbjTypeRelevel <- relevel(foo$SbjType, ref="pro")
+
+foo.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjTypeRelevel+SbjTypeRelevel+SbjTypeRelevel*ObjTypeRelevel*OV*Clause, data=foo)
+summary(foo.fit.SbjObjOVClause)
+
+
+
 
 #Model with SbjObj interaction, OVClause, OVSbjType interactions, but not 4-way. Model comparison prefers the 4-way, except for BIC, which prefers the SbjObj model.
 foo.fit.SbjObj.OVSbj.OVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType+OV*Clause+OV*SbjType, data=foo)
