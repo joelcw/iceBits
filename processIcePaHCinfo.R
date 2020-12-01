@@ -295,3 +295,16 @@ BIC(subonly.fit.SbjObj)
 subonly.fit.SbjObjOV <- lmer(SentDormUido~(1|TextId)+Year+OV+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV, data=subonly)
 summary(subonly.fit.SbjObjOV)
 anova(subonly.fit.SbjObj,subonly.fit.SbjObjOV, test="Chisq")
+
+
+
+####Modelling OV as a function of syntactic environment
+foo.ovfit.SbjObjClause <- glmer(OV~(1|TextId)+Year+Clause+Year+SimpleGenre+ObjType+SbjType+SimpleGenre:Year+SbjType*ObjType*Clause, family=binomial, data=foo)
+foo.ovfit.SbjObj <- glmer(OV~(1|TextId)+Year+Clause+Year+SimpleGenre+ObjType+SbjType+SimpleGenre:Year+SbjType*ObjType, family=binomial, data=foo)
+foo.ovfit.Sbj.Obj <- glmer(OV~(1|TextId)+Year+Clause+Year+SimpleGenre+ObjType+SbjType+SimpleGenre:Year, family=binomial, data=foo)
+summary()
+anova(foo.ovfit.SbjObjClause,foo.ovfit.SbjObj, test="Chisq")
+AIC(foo.ovfit.SbjObj)
+AIC(foo.ovfit.SbjObjClause)
+BIC(foo.ovfit.SbjObj)
+BIC(foo.ovfit.SbjObjClause)
