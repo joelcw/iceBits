@@ -76,6 +76,16 @@ while (i <= nrow(foo))
   
   }
 
+####Outputting the processed file of data points. The list need to be convered to strings to be written out, annoyingly, but we probably won't need them further. This can be read in directly from now on without processing all the things above.
+foo$SentFreq <- as.character(foo$SentFreq)
+foo$SentInfo <- as.character(foo$SentInfo)
+foo$SentProb <- as.character(foo$SentProb)
+foo$ClauseFreq <- as.character(foo$ClauseFreq)
+foo$ClauseInfo <- as.character(foo$ClauseInfo)
+foo$ClauseProb <- as.character(foo$ClauseProb)
+write_tsv(foo,file="~/iceBits/ovCodingTreeAndClauseDormuido.tsv",col_names = TRUE)
+
+
 
 ####Some plots
 
