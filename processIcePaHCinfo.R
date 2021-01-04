@@ -13,6 +13,20 @@ library(lmerTest)
 library(devtools)
 source_url('https://raw.githubusercontent.com/joelcw/constantentropy/master/dormUido.R')
 
+
+########The following is if you don't need to process raw corpus query data, but have already done the below steps
+
+foo <- read.delim(file="~/iceBits/ovCodingTreeAndClauseDormuido.tsv",header = T,sep="\t")
+foo$Year <- as.numeric(as.character(foo$Year))
+foo$OV <- as.numeric(as.character(foo$OV))
+foo$SbjWords <- as.numeric(as.character(foo$SbjWords))
+foo$ObjWords <- as.numeric(as.character(foo$ObjWords))
+
+
+
+
+########The following is for processing the raw corpus query data, if you haven't done that already:
+########BEGIN PRE-PROCESSING#########
 foo <- read.delim(file="~/iceBits/ovCodingTreeAndClauseFreq.tsv",header = F,sep="\t")
 
 #drop empty columns and name good columns
@@ -84,6 +98,8 @@ foo$ClauseFreq <- as.character(foo$ClauseFreq)
 foo$ClauseInfo <- as.character(foo$ClauseInfo)
 foo$ClauseProb <- as.character(foo$ClauseProb)
 write_tsv(foo,file="~/iceBits/ovCodingTreeAndClauseDormuido.tsv",col_names = TRUE)
+########END PRE-PROCESSING#########
+
 
 
 
@@ -109,8 +125,13 @@ nomobjsbj <- subset(nomobj, nomobj$SbjType == "dp")
 nomobjsbj <- droplevels(nomobjsbj)
 nomobjsbj$OV <- as.factor(nomobjsbj$OV)
 
+
+
+foo$SimpleGenre <- ifelse(foo$Genre == "nar", "nar", "other")
+
+foo$OV <- as.factor(foo$OV)
 #Note that dormuido is stable over time, and Year is not significant in any model below.
-ggplot(nomobjsbj, aes(Year, ClauseDormUido, color=OV)) + 
+ggplot(foo, aes(Year, ClauseDormUido, color=OV)) + 
   labs(y = "ClauseDorm-ClauseUido", x = "\nYear") +
   #  geom_line() +
   geom_point() +
@@ -125,7 +146,6 @@ ggplot(nomobjsbj, aes(Year, ClauseDormUido, color=OV)) +
 ##Assume interaction between Genre Year and OV, because we know the slope of decline of OV over time differs by Genre,
 #but recode Genre into nar and other, so there's some statistical power
 
-foo$SimpleGenre <- ifelse(foo$Genre == "nar", "nar", "other")
 
 #no interactions with dorm
 foo.fit.Sbj.Obj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType, data=foo)
