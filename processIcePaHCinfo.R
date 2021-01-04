@@ -144,7 +144,7 @@ ggplot(foo, aes(Year, ClauseDormUido, color=OV)) +
 ####Statistical models
 
 ##Assume interaction between Genre Year and OV, because we know the slope of decline of OV over time differs by Genre,
-#but recode Genre into nar and other, so there's some statistical power
+#but use SimpleGenre (nar vs other), so there's more statistical power
 
 
 #no interactions with dorm
