@@ -23,6 +23,8 @@ foo$SbjWords <- as.numeric(as.character(foo$SbjWords))
 foo$ObjWords <- as.numeric(as.character(foo$ObjWords))
 
 
+foo$SimpleGenre <- ifelse(foo$Genre == "nar", "nar", "other")
+
 
 
 ########The following is for processing the raw corpus query data, if you haven't done that already:
@@ -127,19 +129,19 @@ nomobjsbj$OV <- as.factor(nomobjsbj$OV)
 
 
 
-foo$SimpleGenre <- ifelse(foo$Genre == "nar", "nar", "other")
 
 foo$OV <- as.factor(foo$OV)
 #Note that dormuido is stable over time, and Year is not significant in any model below.
-ggplot(foo, aes(Year, ClauseDormUido, color=OV)) + 
-  labs(y = "ClauseDorm-ClauseUido", x = "\nYear") +
+p <- ggplot(foo, aes(Year, ClauseDormUido, color=OV)) + 
+  labs(y = "Calibrated DORM (bits) of Clause", x = "\nYear") +
   #  geom_line() +
-  geom_point() +
+  geom_point(alpha=0.25) +
   geom_smooth() +
   facet_wrap(~SimpleGenre) +
   scale_color_brewer(palette = "Set1") + 
   theme_bw() + theme(panel.border = element_blank())
 
+ggsave(p, file = "~/iceBits/whatDoesntChange.pdf", width = 8.09, height = 5)
 
 ####Statistical models
 
@@ -148,11 +150,11 @@ ggplot(foo, aes(Year, ClauseDormUido, color=OV)) +
 
 
 #no interactions with dorm
-foo.fit.Sbj.Obj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType, data=foo)
+foo.fit.Sbj.Obj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+SimpleGenre+ObjType+SbjType, data=foo)
 summary(foo.fit.Sbj.Obj)
 
 #interaction between SbjType and OV affecting dormuido, and ObjType and OV, but no 3-way interaction affecting dormuido. Model comparison borderline on all measures.
-foo.fit.SbjOV.ObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType:OV+ObjType:OV, data=foo)
+foo.fit.SbjOV.ObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+SimpleGenre+ObjType+SbjType+SbjType:OV+ObjType:OV, data=foo)
 summary(foo.fit.SbjOV.ObjOV)
 
 anova(foo.fit.SbjOV.ObjOV,foo.fit.Sbj.Obj, test="Chisq")
@@ -162,7 +164,7 @@ BIC(foo.fit.Sbj.Obj)
 BIC(foo.fit.SbjOV.ObjOV)
 
 #Interaction between Sbj and Obj, but not with OV; model comparison shows this to be important.
-foo.fit.SbjObj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType:ObjType, data=foo)
+foo.fit.SbjObj <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+SimpleGenre+ObjType+SbjType+SbjType:ObjType, data=foo)
 summary(foo.fit.SbjObj)
 anova(foo.fit.SbjObj,foo.fit.Sbj.Obj, test="Chisq")
 AIC(foo.fit.Sbj.Obj)
@@ -172,19 +174,33 @@ BIC(foo.fit.SbjObj)
 
 
 #3-way interaction between sbj and obj types and OV affecting dormuido, but no interaction with Clause yet
-foo.fit.SbjObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV, data=foo)
+foo.fit.SbjObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV, data=foo)
 summary(foo.fit.SbjObjOV)
 anova(foo.fit.SbjObj,foo.fit.SbjObjOV, test="Chisq")
+AIC(foo.fit.SbjObjOV)
+BIC(foo.fit.SbjObjOV)
 
 #4-way interaction incl Clause affecting dormuido. Model comparison by Chisq and AIC does show this to be important, though BIC goes the other way. Still, I think we have a winner.  OV and Clause sig, and OV and SbjTypepro, and OV and SbjTypegapped.
-foo.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=foo)
+foo.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=foo)
 summary(foo.fit.SbjObjOVClause)
-anova(foo.fit.SbjObj,foo.fit.SbjObjOVClause, test="Chisq")
-AIC(foo.fit.SbjObj)
+anova(foo.fit.SbjObjOV,foo.fit.SbjObjOVClause, test="Chisq")
+AIC(foo.fit.SbjObjOV)
 AIC(foo.fit.SbjObjOVClause)
-BIC(foo.fit.SbjObj)
+BIC(foo.fit.SbjObjOV)
 BIC(foo.fit.SbjObjOVClause)
 
+#Model comparison for 4-way with and without Year; not sig
+foo.fit.SbjObjOVClauseNoYear <- lmer(ClauseDormUido~(1|TextId)+OV+Clause+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=foo)
+summary(foo.fit.SbjObjOVClauseNoYear)
+anova(foo.fit.SbjObjOVClauseNoYear,foo.fit.SbjObjOVClause, test="Chisq")
+AIC(foo.fit.SbjObjOVClause)
+AIC(foo.fit.SbjObjOVClauseNoYear)
+BIC(foo.fit.SbjObjOVClause)
+BIC(foo.fit.SbjObjOVClauseNoYear)
+
+#Model comparison for 4-way with Year and OV interaction; not sig
+foo.fit.SbjObjOVClause.OVYear <- lmer(ClauseDormUido~(1|TextId)+Year+OV*Year+Clause+SimpleGenre+ObjType+SbjType+SbjType*ObjType*OV*Clause, data=foo)
+anova(foo.fit.SbjObjOVClauseNoYear,foo.fit.SbjObjOVClause.OVYear, test="Chisq")
 
 #just for the hell of it, see if the 3-way interaction OV:Clause:SbjType...and actually model comparison shows the 4 way is different (but BIC goes the other way)
 foo.fit.SbjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjType+SbjType+SbjType*OV*Clause, data=foo)
@@ -202,6 +218,9 @@ foo$SbjTypeRelevel <- relevel(foo$SbjType, ref="pro")
 
 foo.fit.SbjObjOVClause <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjTypeRelevel+SbjTypeRelevel+SbjTypeRelevel*ObjTypeRelevel*OV*Clause, data=foo)
 summary(foo.fit.SbjObjOVClause)
+
+foo.fit.SbjObjOV <- lmer(ClauseDormUido~(1|TextId)+Year+OV+Clause+Year+SimpleGenre+ObjTypeRelevel+SbjTypeRelevel+SbjTypeRelevel*ObjTypeRelevel*OV, data=foo)
+summary(foo.fit.SbjObjOV)
 
 
 
