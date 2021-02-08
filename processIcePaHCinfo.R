@@ -132,8 +132,8 @@ nomobjsbj$OV <- as.factor(nomobjsbj$OV)
 
 foo$OV <- as.factor(foo$OV)
 #Note that dormuido is stable over time, and Year is not significant in any model below.
-p <- ggplot(foo, aes(Year, ClauseDormUido, color=OV)) + 
-  labs(y = "Calibrated DORM (bits) of Clause", x = "\nYear") +
+p <- ggplot(foo, aes(Year, SentDormUido, color=OV)) + 
+  labs(y = "Calibrated DORM (bits) of Sentence", x = "\nYear") +
   #  geom_line() +
   geom_point(alpha=0.25) +
   geom_smooth() +
@@ -142,6 +142,35 @@ p <- ggplot(foo, aes(Year, ClauseDormUido, color=OV)) +
   theme_bw() + theme(panel.border = element_blank())
 
 ggsave(p, file = "~/iceBits/whatDoesntChange.pdf", width = 8.09, height = 5)
+
+#removing bible translation
+fooNoBib <- subset(foo, foo$Year != 1540)
+ggplot(fooNoBib, aes(Year, SentDormUido, color=OV)) + 
+  labs(y = "Calibrated DORM (bits) of Sentence", x = "\nYear") +
+  #  geom_line() +
+  geom_point(alpha=0.25) +
+  geom_smooth() +
+  facet_wrap(~SimpleGenre) +
+  scale_color_brewer(palette = "Set1") + 
+  theme_bw() + theme(panel.border = element_blank())
+
+
+#Variance of dormuido over time - needs to be recalculated by year or decade
+
+foo$Variance <- 0
+for (y in foo$Year)
+{foo$Variance[foo$Year == y] <- var(foo$SentDormUido[foo$Year == y])}
+
+
+ggplot(foo, aes(Year, Variance, color=OV)) + 
+  labs(y = "Variance of Sentence Calibrated DORM (bits)", x = "\nYear") +
+  #  geom_line() +
+  geom_point(alpha=0.25) +
+  geom_smooth() +
+  facet_wrap(~SimpleGenre) +
+  scale_color_brewer(palette = "Set1") + 
+  theme_bw() + theme(panel.border = element_blank())
+
 
 ####Statistical models
 
