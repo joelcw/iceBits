@@ -145,6 +145,7 @@ ggsave(p, file = "~/iceBits/whatDoesntChange.pdf", width = 8.09, height = 5)
 
 #removing bible translation
 fooNoBib <- subset(foo, foo$Year != 1540)
+fooNoBib <- droplevels(fooNoBib)
 ggplot(fooNoBib, aes(Year, SentDormUido, color=OV)) + 
   labs(y = "Calibrated DORM (bits) of Sentence", x = "\nYear") +
   #  geom_line() +
@@ -161,8 +162,15 @@ foo$Variance <- 0
 for (y in foo$Year)
 {foo$Variance[foo$Year == y] <- var(foo$SentDormUido[foo$Year == y])}
 
+fooNoBib$Variance <- 0
+for (y in fooNoBib$Year)
+{fooNoBib$Variance[fooNoBib$Year == y] <- var(fooNoBib$SentDormUido[fooNoBib$Year == y])}
 
-ggplot(foo, aes(Year, Variance, color=OV)) + 
+#New data frame removing extra rows, cause there's only two observations of variance per year at most, one for OV and one for VO
+fooVar <- unique(data.frame(fooNoBib$Year,fooNoBib$OV,fooNoBib$SimpleGenre,fooNoBib$Variance))
+colnames(fooVar) <- c("Year","OV", "SimpleGenre","Variance")
+
+p <- ggplot(fooVar, aes(Year, Variance, color=OV)) + 
   labs(y = "Variance of Sentence Calibrated DORM (bits)", x = "\nYear") +
   #  geom_line() +
   geom_point(alpha=0.25) +
@@ -170,6 +178,8 @@ ggplot(foo, aes(Year, Variance, color=OV)) +
   facet_wrap(~SimpleGenre) +
   scale_color_brewer(palette = "Set1") + 
   theme_bw() + theme(panel.border = element_blank())
+
+ggsave(p, file = "~/iceBits/whatDoesntChangeVariance.pdf", width = 8.09, height = 5)
 
 
 ####Statistical models
@@ -274,6 +284,18 @@ AIC(foo.fit.SbjObj.OVSbj.OVClause)
 AIC(foo.fit.SbjObjOVClause)
 BIC(foo.fit.SbjObj.OVSbj.OVClause)
 BIC(foo.fit.SbjObjOVClause)
+
+
+###A basic no interaction model on variance of sentDormUido
+
+foo.var.fit <- glm(Variance~Year+OV+SimpleGenre, data=fooVar, family=gaussian)
+foo.var.NoYear.fit <- glm(Variance~OV+SimpleGenre, data=fooVar, family=gaussian())
+summary(foo.var.fit)
+anova(foo.var.fit,foo.var.NoYear.fit, test = "Chisq")
+AIC(foo.var.fit)
+AIC(foo.var.NoYear.fit)
+BIC(foo.var.fit)
+BIC(foo.var.NoYear.fit)
 
 
 ##Same models with just narrative texts; but they all come out the same as above, more or less.
